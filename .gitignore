@@ -1,0 +1,11 @@
+node_modules/
+dist/
+portable-dist/
+release/
+output/
+.playwright-cli/
+.env
+.env.*
+*.log
+.DS_Store
+/static/licenses/dependencies.txt

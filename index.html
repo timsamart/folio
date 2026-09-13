@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f6fa" />
+  <meta name="description" content="A quiet home for your Markdown. A mobile reading app with diagrams, code, mathematics and an offline library." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Folio — A little room to read</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <script>
+    try { const p = JSON.parse(localStorage.getItem('folio-preferences') || '{}'); const t = p.theme === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : p.theme; if (['light','dark','sepia'].includes(t)) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#reading-content">Skip to document</a>
+  <div class="app-shell">
+    <aside class="library-sidebar" aria-label="Document library">
+      <a class="brand" href="./index.html" aria-label="Folio home"><span class="brand-mark"><i data-lucide="book-open"></i></span>folio<span class="brand-dot">.</span></a>
+      <div class="sidebar-topline"><span class="eyebrow">YOUR LIBRARY</span><span class="document-count">3</span></div>
+      <label class="library-search"><i data-lucide="search"></i><input id="library-filter" name="library-search" type="search" placeholder="Find a document…" aria-label="Find a document" autocomplete="off" /><kbd>/</kbd></label>
+      <div class="library-tabs" role="group" aria-label="Filter library"><button data-filter="all" aria-pressed="true">All documents</button><button data-filter="bookmarked" aria-pressed="false"><i data-lucide="bookmark"></i>Saved</button></div>
+      <div id="desktop-library" class="document-list"></div>
+      <button class="add-document" data-action="import"><i data-lucide="plus"></i>Add document</button>
+      <div class="sidebar-bottom">
+        <div class="quiet-note"><span class="note-symbol">f.</span><p>A little room<br />for what matters.</p></div>
+        <button class="offline-indicator" data-action="about"><span class="status-dot"></span><span id="offline-label">On this device</span><i data-lucide="info"></i></button>
+      </div>
+    </aside>
+    <div class="reading-shell">
+      <header class="topbar">
+        <button class="icon-button mobile-only" data-action="library" aria-label="Open library"><i data-lucide="library"></i></button>
+        <div class="breadcrumb"><span class="desktop-only">Reading room</span><span class="breadcrumb-slash desktop-only">/</span><span id="current-filename">a-quieter-way-to-read.md</span></div>
+        <div class="top-actions"><span class="file-type desktop-only">MARKDOWN</span><button class="icon-button desktop-only" data-action="search" aria-label="Search in document" title="Search in document (Ctrl+K)"><i data-lucide="search"></i></button><button class="icon-button bookmark-control" data-action="bookmark" aria-label="Bookmark document" aria-pressed="false" title="Bookmark document"><i data-lucide="bookmark"></i></button><button class="icon-button" data-action="more" aria-label="Document options" title="Document options"><i data-lucide="ellipsis"></i></button></div>
+      </header>
+      <div class="reading-progress-track"><div id="reading-progress-bar"></div></div>
+      <div class="reading-workspace">
+        <main id="reading-main" tabindex="-1">
+          <div class="document-meta"><span id="collection-label">THE READING ROOM</span><span class="meta-dot">·</span><span id="reading-time">4 MIN READ</span></div>
+          <article id="reading-content" class="prose" tabindex="-1" aria-label="Document content"><h1>A quieter way to read</h1><p class="loading-text">Opening your reading room…</p></article>
+          <div class="document-end"><span></span><i data-lucide="book-open"></i><span></span></div>
+          <p class="end-note">A good place to pause.</p>
+        </main>
+        <aside class="outline-sidebar" aria-label="Reading tools">
+          <div class="outline-heading"><span class="eyebrow">ON THIS PAGE</span><i data-lucide="list"></i></div>
+          <nav id="desktop-outline" class="outline-list" aria-label="Document outline"></nav>
+          <div class="reading-position"><span class="progress-ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-bg" cx="20" cy="20" r="16"/><circle id="ring-progress" cx="20" cy="20" r="16"/></svg><i data-lucide="book-open"></i></span><div><strong id="progress-label">Just beginning</strong><span id="remaining-label">Take your time</span></div></div>
+          <div class="reading-tools"><button data-action="appearance"><i data-lucide="type"></i>Appearance<span>Aa</span></button><button data-action="focus" aria-pressed="false"><i data-lucide="scan"></i>Focus mode<kbd>F</kbd></button></div>
+          <span class="outline-footnote">YOUR PACE. YOUR SPACE.</span>
+        </aside>
+      </div>
+      <footer class="desktop-status"><span><span class="small-dot"></span><span id="save-status">Your place is saved automatically</span></span><button data-action="appearance"><i data-lucide="type"></i>Make yourself comfortable<i data-lucide="arrow-up-right"></i></button></footer>
+    </div>
+  </div>
+  <nav class="mobile-dock" aria-label="Reading controls"><button data-action="library"><i data-lucide="library"></i><span>Library</span></button><button data-action="outline"><i data-lucide="list"></i><span>Outline</span></button><button data-action="search"><i data-lucide="search"></i><span>Find</span></button><button data-action="appearance"><span class="type-icon">Aa</span><span>Appearance</span></button></nav>
+  <button id="exit-focus" class="focus-exit" data-action="focus"><i data-lucide="minimize"></i>Exit focus</button>
+  <dialog id="sheet" aria-labelledby="sheet-title"><div class="sheet-handle"></div><div class="sheet-header"><h2 id="sheet-title"></h2><button class="icon-button" id="close-sheet" aria-label="Close panel"><i data-lucide="x"></i></button></div><div id="sheet-content"></div></dialog>
+  <dialog id="diagram-dialog" aria-labelledby="diagram-title"><div class="sheet-header"><h2 id="diagram-title">A closer look</h2><div class="diagram-tools"><button class="icon-button" id="zoom-out" aria-label="Zoom out"><i data-lucide="minus"></i></button><button id="zoom-reset" class="text-button">100%</button><button class="icon-button" id="zoom-in" aria-label="Zoom in"><i data-lucide="plus"></i></button><button class="icon-button" id="close-diagram" aria-label="Close diagram"><i data-lucide="x"></i></button></div></div><div id="expanded-diagram" tabindex="0" aria-label="Scrollable diagram"></div><div class="diagram-bottom"><span>Scroll to explore · Pinch to zoom with your browser</span><button id="copy-expanded" class="text-button">Copy source</button></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="drop-overlay"><i data-lucide="file-plus-2"></i><strong>A new page for your library.</strong><span>Drop your Markdown files here</span></div>
+  <input type="file" id="file-input" multiple accept=".md,.markdown,.mdown,.txt,text/markdown,text/plain" hidden />
+  <noscript><p class="noscript">Folio needs JavaScript to render and store your Markdown documents. Enable it in your browser to open the reader.</p></noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

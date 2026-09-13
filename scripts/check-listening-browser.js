@@ -18,6 +18,7 @@ async page => {
   });
   await page.reload();
   await page.waitForSelector('#desktop-outline .outline-play', { state: 'attached' });
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
   await page.setViewportSize({width:390,height:844});
   await page.locator('[data-action="listen"]').first().click();
   await page.waitForSelector('#listen-voice');

@@ -10,6 +10,20 @@ Open the app link in your browser. On **iPhone or iPad**, use Safari → Share �
 
 Keep Folio open until offline reading is ready. Your documents, fonts, code highlighting, math, and diagram renderers can then work without a connection. This is an installable web app, not an APK or App Store package.
 
+### Open Markdown from other Android apps
+
+1. Open Folio in **Chrome on Android** and choose **Install app** (an installed app is required; a home-screen shortcut does not register a share target).
+2. In Files or another file manager, select one or more Markdown files and tap **Share → Folio**.
+3. Folio saves the files in your library and opens the last document. Markdown shared as text works too.
+
+Use Android's **Share** menu. The separate **Open with** picker and default file associations are not supported by this web app on Android. Safari on iOS does not support receiving shares into installed web apps; use Folio's file picker there.
+
+**Already installed before version 1.1?** Open Folio online and apply **Reader update available → Update & reload** if offered. Android's installed-app registration updates separately and can take longer. If Folio still does not appear under Share, **back up your library first**, uninstall Folio, and install it again from Chrome. Restore the backup if needed. Don't clear browser data without a backup.
+
+The service worker receives shared files locally, including offline. File contents are not uploaded to GitHub Pages or placed in a URL. It accepts up to 20 files per share, 2 MB per file, and 20 MB in total. Unsupported, empty, binary, and oversized files get an explanation; valid files from the same share are still imported. Incoming files wait locally until saved; abandoned handoffs expire after one day when another share arrives.
+
+See [Chrome's share target documentation](https://developer.chrome.com/docs/capabilities/web-apis/web-share-target) and [installed app manifest updates](https://web.dev/articles/manifest-updates).
+
 ## Read your way
 
 - Open multiple `.md`, `.markdown`, `.mdown`, or `.txt` files, drag and drop, or paste Markdown. Up to 2 MB per document.
@@ -64,6 +78,15 @@ Serve the contents of `portable-dist/` at `/` on an HTTPS host. For a local prev
 Vanilla JavaScript and Vite; Marked, DOMPurify, Highlight.js, KaTeX, Mermaid, and Lucide. All runtime libraries and fonts are bundled, without a runtime CDN dependency. Raw HTML is shown as text, Markdown output is sanitized, KaTeX uses `trust: false`, and Mermaid uses strict security.
 
 Browser validation covers 320–1440px layouts, offline reloads, all three renderers, malformed diagrams, import and restore, original exports, search, bookmarks, saved positions, reading preferences, and reduced motion. Physical iOS/Android installation remains untested. `npm run build` also verifies that every offline asset exists and that the manifest and hosting paths agree.
+
+Share validation uses real multipart navigation requests through the production service worker, including offline and cold launches, multiple files, generic MIME types, interrupted imports, and invalid input. The Android OS share-sheet registration itself still needs a physical-device check.
+
+With the production preview running, use a fresh Playwright CLI session to repeat the share checks:
+
+```sh
+npx --yes --package @playwright/cli playwright-cli -s=share open http://127.0.0.1:5174/folio/
+npx --yes --package @playwright/cli playwright-cli -s=share run-code --filename=scripts/check-share-browser.js
+```
 
 Design work used Frontend Design, UI/UX Pro Max, and Vercel Web Design Guidelines; browser validation used Playwright.
 

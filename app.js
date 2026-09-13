@@ -3,6 +3,7 @@ import { createIcons, BookOpen, Search, Bookmark, Plus, Library, Info, List, Typ
 import { samples } from './samples.js';
 import { readDocuments, saveDocument, deleteDocument, readPreferences, savePreferences } from './storage.js';
 import { escapeHTML as esc, renderDocument, renderDiagrams, titleFrom } from './renderer.js';
+import { readShare, removeShare } from './share-target.js';
 
 const icons = { BookOpen, Search, Bookmark, Plus, Library, Info, List, Type, Scan, ArrowUpRight, X, Minus, Minimize, FilePlus2, FileText, Ellipsis, Download, Code, Trash2, Upload, Check, Monitor, WifiOff };
 const refreshIcons = () => createIcons({ icons, attrs: { 'aria-hidden': 'true' } });
@@ -169,6 +170,11 @@ function showImport() {
   showSheet('Something worth reading', `<p class="sheet-description">Bring your notes, essays, and ideas. Open a Markdown file or paste a new page.</p><button class="primary-button" data-action="choose-files">${icon('upload')}Open Markdown files</button><p class="field-note">.md, .markdown, .mdown, or .txt · Up to 2 MB each</p><div class="form-divider">or paste your Markdown</div><form id="paste-form"><label class="field-label" for="document-title">Title <span class="field-note">(optional)</span></label><input class="field-input" id="document-title" name="title" placeholder="An idea worth keeping…" autocomplete="off" /><label class="field-label" for="markdown-input">Markdown</label><textarea class="field-input markdown-input" id="markdown-input" name="markdown" placeholder="# A new page…" required spellcheck="false"></textarea><p id="import-error" class="error-message" role="alert"></p><button class="secondary-button" type="submit">Add to your library</button></form><p class="field-note">Saved in this browser on this device. External images load only when you choose.</p>`);
   $('#document-title').value = draft.title;
   $('#markdown-input').value = draft.markdown;
+  sheetContent.insertAdjacentHTML('beforeend', '<button class="text-button" data-action="share-help">Open from another app</button>');
+}
+
+function showShareHelp() {
+  showSheet('From your files to Folio', `<p class="sheet-description">On Android, send a Markdown file straight to your reading room.</p><ol class="sheet-description"><li>Open Folio in Chrome and choose <strong>Install app</strong>.</li><li>In your file manager, select a Markdown file and tap <strong>Share</strong>.</li><li>Choose <strong>Folio</strong>. Your document is saved and opened for reading.</li></ol><p class="field-note">Look in the Share menu. Android’s separate “Open with” picker is not supported by this web app.</p>${pendingInstall ? '<button class="primary-button" data-action="install">Install Folio</button>' : ''}<h3>Folio missing from Share?</h3><p class="sheet-description">An older installation may still have the previous app registration. Open Folio online and apply any reader update. If it is still missing, back up your library, uninstall Folio, then install it again from Chrome. Restore your backup if needed.</p><button class="secondary-button" data-action="export-library">Back up your library</button><p class="field-note">Choose the app installation, rather than a home-screen shortcut. Sharing also works offline once the reader is ready. Folio 1.1.0</p>`);
 }
 
 function showAppearance() {
@@ -210,6 +216,7 @@ function showAbout() {
   if (updateAvailable) {
     const button = document.createElement('button'); button.className = 'primary-button'; button.dataset.action = 'update-app'; button.textContent = 'Reader update available'; sheetContent.prepend(button);
   }
+  sheetContent.insertAdjacentHTML('beforeend', '<button class="secondary-button" data-action="share-help">Open from another app</button><p class="field-note">Folio 1.1.0</p>');
 }
 
 function download(data, name, type = 'text/markdown;charset=utf-8') {
@@ -229,12 +236,58 @@ async function copyText(text, button) {
   toast('Copied to clipboard');
 }
 
-async function addDocument(raw, name, title) {
+async function addDocument(raw, name, title, id = crypto.randomUUID()) {
+  const existing = documents.find(doc => doc.id === id);
+  if (existing) return existing;
   if (!raw.trim()) throw new Error('Add some Markdown before saving this page.');
   if (new Blob([raw]).size > 2 * 1024 * 1024) throw new Error('This document is larger than 2 MB. Split it into smaller Markdown files.');
-  const doc = { id: crypto.randomUUID(), name: name || 'untitled.md', title: title?.trim() || titleFrom(raw, name), content: raw, collection: 'Your documents', progress: 0, scrollY: 0, bookmarked: false, addedAt: Date.now() };
+  const doc = { id, name: name || 'untitled.md', title: title?.trim() || titleFrom(raw, name), content: raw, collection: 'Your documents', progress: 0, scrollY: 0, bookmarked: false, addedAt: Date.now() };
   if (!await persist(doc)) throw new Error('The document could not be saved. Free some browser storage, then try again. Your original text is still here.');
   documents.unshift(doc); prefs.initialized = true; rememberPreferences(); return doc;
+}
+
+async function consumeIncomingShare() {
+  const url = new URL(location.href);
+  const id = url.searchParams.get('share');
+  const failure = url.searchParams.get('share-error');
+  if (!id && !failure) return null;
+  let latest, count = 0, retry = false;
+  const errors = [];
+  if (failure) errors.push(failure === 'storage'
+    ? 'There was not enough browser storage to receive this share. Free some space, then share the original file again.'
+    : 'The share could not be read. Select the Markdown file and share it again.');
+  else {
+    try {
+      const incoming = await readShare(import.meta.env.BASE_URL, id);
+      if (!incoming) errors.push('This share is no longer waiting. If it is not in your library, share the original file again.');
+      else {
+        errors.push(...incoming.errors);
+        for (const [index, file] of incoming.files.entries()) {
+          try {
+            // Stable IDs make an interrupted import safe to retry without duplicates.
+            latest = await addDocument(file.content, file.name, file.title, `share-${id}-${index}`);
+            count++;
+          } catch {
+            retry = true;
+            errors.push(`${file.name}: Could not save this document. Free some browser storage, then try again.`);
+          }
+        }
+        if (!retry) await removeShare(import.meta.env.BASE_URL, id);
+      }
+    } catch {
+      retry = true;
+      errors.push('Your shared files could not be opened. Try again after browser storage is available.');
+    }
+  }
+  if (!retry) { url.searchParams.delete('share'); url.searchParams.delete('share-error'); }
+  if (latest) url.searchParams.set('doc', latest.id);
+  history.replaceState({}, '', url);
+  return { latest, count, errors, retry };
+}
+
+function showShareResult(result) {
+  if (result.errors.length) showSheet('About your shared files', `<p class="sheet-description">${result.count} document${result.count === 1 ? '' : 's'} saved to your library.</p><ul>${result.errors.map(error => `<li>${esc(error)}</li>`).join('')}</ul>${result.retry ? '<button class="primary-button" data-action="retry-share">Try receiving again</button>' : '<button class="primary-button" data-action="import">Open another file</button>'}`);
+  else if (result.count) toast(`${result.count} shared document${result.count === 1 ? '' : 's'} added to your library`);
 }
 
 async function importFiles(files) {
@@ -264,6 +317,8 @@ function emptyLibrary() {
 }
 
 const actions = {
+  'share-help': showShareHelp,
+  'retry-share': () => location.reload(),
   library: showLibrary,
   import: showImport,
   'choose-files': () => { $('#file-input').value = ''; $('#file-input').click(); },
@@ -449,6 +504,7 @@ async function init() {
     toast('Browser storage is unavailable. Your place cannot be saved.');
   }
   documents.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+  const shared = await consumeIncomingShare();
   const requested = new URL(location.href).searchParams.get('doc');
   const initial = documents.find(doc => doc.id === requested) || documents.find(doc => doc.id === prefs.current) || documents[0];
   const fragment = location.hash;
@@ -458,5 +514,6 @@ async function init() {
   if (requested && !documents.some(doc => doc.id === requested)) toast('That document is not on this device. Your library is open instead.');
   if (storageAvailable && navigator.storage?.persisted) navigator.storage.persisted().catch(() => {});
   void setupOffline();
+  if (shared) showShareResult(shared);
 }
 init().catch(error => { console.error(error); content.innerHTML = '<h1>Let’s turn the page.</h1><p>The reader could not open. Reload this page to try again; your stored documents have not been removed.</p>'; });

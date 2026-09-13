@@ -1,6 +1,6 @@
 {
   "name": "folio-reader",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "A quiet mobile Markdown reader with Mermaid, code, mathematics, and an offline library.",
@@ -14,7 +14,7 @@
     "build:portable": "vite build --base / --outDir portable-dist && node scripts/verify-build.mjs portable-dist /",
     "prebuild:portable": "node scripts/collect-notices.mjs",
     "preview": "vite preview",
-    "check": "node --check app.js && node --check renderer.js && node --check storage.js && node --check vite.config.js"
+    "check": "node --check app.js && node --check renderer.js && node --check storage.js && node --check share-target.js && node --check vite.config.js"
   },
   "dependencies": {
     "dompurify": "3.4.15",

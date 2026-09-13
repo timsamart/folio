@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { receiveShare, shareCacheName } from './share-target.js';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const defaultBase = '/folio/';
@@ -24,7 +25,8 @@ function offlineReader() {
     generateBundle(_options, bundle) {
       const files = Object.keys(bundle);
       const assets = staticFiles(join(root, 'static'));
-      const revision = createHash('sha256').update(files.map(name => {
+      const shareReceiver = receiveShare.toString();
+      const revision = createHash('sha256').update(shareReceiver + files.map(name => {
         const item = bundle[name];
         return name + (item.type === 'chunk' ? item.code : item.source);
       }).join('') + assets.map(path => readFileSync(path).toString('base64')).join('')).digest('hex').slice(0, 12);
@@ -34,6 +36,7 @@ function offlineReader() {
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: `
 const CACHE = ${JSON.stringify(cacheName)};
 const ASSETS = ${JSON.stringify(urls)};
+const receiveShare = ${shareReceiver};
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
 });
@@ -45,6 +48,10 @@ self.addEventListener('message', event => {
 });
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+  if (url.origin === self.location.origin && url.pathname === ${JSON.stringify(base + 'share-target')} && event.request.method === 'POST') {
+    event.respondWith(receiveShare(event.request, { base: ${JSON.stringify(base)}, origin: self.location.origin, cacheName: ${JSON.stringify(shareCacheName(base))} }));
+    return;
+  }
   if (event.request.method !== 'GET' || url.origin !== self.location.origin || !url.pathname.startsWith(${JSON.stringify(base)})) return;
   event.respondWith(caches.open(CACHE).then(async cache => {
     const key = event.request.mode === 'navigate' ? ${JSON.stringify(base + 'index.html')} : event.request;

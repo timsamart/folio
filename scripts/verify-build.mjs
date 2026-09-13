@@ -20,6 +20,11 @@ assert(!html.includes('/apps/folio/'), 'Portfolio paths must not leak into the s
 assert.equal(manifest.start_url, './index.html');
 assert.equal(manifest.scope, './');
 assert.equal(manifest.display, 'standalone');
+assert.equal(manifest.share_target.action, './share-target');
+assert.equal(manifest.share_target.method, 'POST');
+assert.equal(manifest.share_target.enctype, 'multipart/form-data');
+assert(manifest.share_target.params.files[0].accept.includes('.md'));
+assert(worker.includes(JSON.stringify(base + 'share-target')), 'Share receiver must use the hosting base');
 for (const icon of manifest.icons) assert(existsSync(join(directory, icon.src)), `Missing icon: ${icon.src}`);
 assert(assets.some(path => path.includes('source-serif-4')), 'Reading font must be bundled');
 assert(assets.some(path => path.includes('mermaid.core')), 'Mermaid must be bundled');

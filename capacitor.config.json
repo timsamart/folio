@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.timsamart.folio",
+  "appName": "Folio",
+  "loggingBehavior": "none",
+  "webDir": "native-dist",
+  "android": { "allowMixedContent": false, "webContentsDebuggingEnabled": false },
+  "server": { "androidScheme": "https" }
+}

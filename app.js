@@ -1,11 +1,13 @@
 import './style.css';
-import { createIcons, BookOpen, Search, Bookmark, Plus, Library, Info, List, Type, Scan, ArrowUpRight, X, Minus, Minimize, FilePlus2, FileText, Ellipsis, Download, Code, Trash2, Upload, Check, Monitor, WifiOff } from 'lucide';
+import { createIcons, BookOpen, Search, Bookmark, Plus, Library, Info, List, Type, Scan, ArrowUpRight, X, Minus, Minimize, FilePlus2, FileText, Ellipsis, Download, Code, Trash2, Upload, Check, Monitor, WifiOff, Headphones } from 'lucide';
 import { samples } from './samples.js';
 import { readDocuments, saveDocument, deleteDocument, readPreferences, savePreferences } from './storage.js';
 import { escapeHTML as esc, renderDocument, renderDiagrams, titleFrom } from './renderer.js';
 import { readShare, removeShare } from './share-target.js';
+import { createListening } from './listening/index.js';
+import { isNative, device, receiveNativeFiles } from './native.js';
 
-const icons = { BookOpen, Search, Bookmark, Plus, Library, Info, List, Type, Scan, ArrowUpRight, X, Minus, Minimize, FilePlus2, FileText, Ellipsis, Download, Code, Trash2, Upload, Check, Monitor, WifiOff };
+const icons = { BookOpen, Search, Bookmark, Plus, Library, Info, List, Type, Scan, ArrowUpRight, X, Minus, Minimize, FilePlus2, FileText, Ellipsis, Download, Code, Trash2, Upload, Check, Monitor, WifiOff, Headphones };
 const refreshIcons = () => createIcons({ icons, attrs: { 'aria-hidden': 'true' } });
 const icon = name => `<i data-lucide="${name}"></i>`;
 const $ = selector => document.querySelector(selector);
@@ -29,6 +31,7 @@ let toastTimeout, scrollTimer, renderVersion = 0, restoring = false, pendingInst
 let searchTargets = [], diagramSource = '', diagramZoom = 1, diagramWidth = 800;
 let offlineReady = false, storageAvailable = true, updateAvailable = false;
 let draft = { title: '', markdown: '' };
+const listening = createListening({ container: content, showSheet, closeSheet, toast });
 const minutes = doc => Math.max(1, Math.ceil(doc.content.trim().split(/\s+/).length / 220));
 const motion = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
 
@@ -83,7 +86,7 @@ function updateLibrary() {
 }
 
 function outlineMarkup() {
-  return headings.length ? headings.map(h => `<a href="#${esc(h.id)}" data-heading="${esc(h.id)}" data-level="${h.tagName.slice(1)}">${esc(h.textContent)}</a>`).join('') : '<p class="empty-state">Sections will appear here when the document has headings.</p>';
+  return headings.length ? headings.map(h => `<div class="outline-row"><a href="#${esc(h.id)}" data-heading="${esc(h.id)}" data-level="${h.tagName.slice(1)}">${esc(h.dataset.outlineTitle || h.textContent)}</a>${h.closest('.footnotes') ? '' : `<button class="outline-play" data-listen-section="${esc(h.id)}" data-listen-title="${esc(h.dataset.outlineTitle || h.textContent)}" aria-label="Read section: ${esc(h.dataset.outlineTitle || h.textContent)}">▶</button>`}</div>`).join('') : '<p class="empty-state">Sections will appear here when the document has headings.</p>';
 }
 
 function updateBookmark() {
@@ -117,8 +120,10 @@ async function openDocument(id, navigation = true) {
   if (!doc) return;
   clearTimeout(scrollTimer);
   if (current && current.id !== id) void persist(current);
-  current = doc;
   const version = ++renderVersion;
+  await listening.load(null);
+  if (version !== renderVersion) return;
+  current = doc;
   restoring = true;
   const position = Math.max(0, Number(doc.scrollY) || 0);
   closeSheet();
@@ -130,6 +135,9 @@ async function openDocument(id, navigation = true) {
   $('#reading-main').hidden = false;
   $('.outline-sidebar').style.visibility = '';
   headings = renderDocument(content, doc.content, doc.title);
+  headings.forEach(h => { h.dataset.outlineTitle = h.textContent; });
+  await listening.load(doc);
+  if (version !== renderVersion) return;
   $('#desktop-outline').innerHTML = outlineMarkup();
   updateLibrary(); updateBookmark();
   prefs.current = doc.id; rememberPreferences();
@@ -174,7 +182,8 @@ function showImport() {
 }
 
 function showShareHelp() {
-  showSheet('From your files to Folio', `<p class="sheet-description">On Android, send a Markdown file straight to your reading room.</p><ol class="sheet-description"><li>Open Folio in Chrome and choose <strong>Install app</strong>.</li><li>In your file manager, select a Markdown file and tap <strong>Share</strong>.</li><li>Choose <strong>Folio</strong>. Your document is saved and opened for reading.</li></ol><p class="field-note">Look in the Share menu. Android’s separate “Open with” picker is not supported by this web app.</p>${pendingInstall ? '<button class="primary-button" data-action="install">Install Folio</button>' : ''}<h3>Folio missing from Share?</h3><p class="sheet-description">An older installation may still have the previous app registration. Open Folio online and apply any reader update. If it is still missing, back up your library, uninstall Folio, then install it again from Chrome. Restore your backup if needed.</p><button class="secondary-button" data-action="export-library">Back up your library</button><p class="field-note">Choose the app installation, rather than a home-screen shortcut. Sharing also works offline once the reader is ready. Folio 1.1.0</p>`);
+  if (isNative) return showSheet('Open Markdown with Folio', '<p class="sheet-description">In Files by Google, tap a .md file, choose <strong>Open with</strong>, then <strong>Folio</strong>. Sharing files to Folio also works. Files are copied into your library; edits to the original do not update that copy.</p><p class="field-note">If another app opens automatically, clear its Open by default setting in Android Settings. The APK and browser app keep separate libraries: back up the browser library and restore its JSON file here.</p><button class="secondary-button" data-action="restore-library">Restore a library backup</button>');
+  showSheet('From your files to Folio', `<p class="sheet-description">For Android’s <strong>Open with</strong> menu, install the Folio APK. The browser app and APK keep separate libraries, so back up here and restore in the APK.</p><a class="primary-button" href="https://github.com/timsamart/folio/releases/latest" target="_blank" rel="noopener noreferrer">Download Folio for Android</a><button class="text-button" data-action="export-library">Back up this library</button><h3>Using the browser app</h3><p class="sheet-description">A Chrome-installed Folio can receive <strong>Share → Folio</strong>. It cannot register in Android’s Open with menu. On iPhone and iPad, use Folio’s own Open Markdown files button.</p><p class="field-note">Folio 1.2.0 · APK updates are installed manually over the previous version.</p>`);
 }
 
 function showAppearance() {
@@ -208,18 +217,24 @@ function findPassages(query) {
 }
 
 function showMore() {
-  showSheet('Your document', `<p class="sheet-description">${esc(current?.title || 'Your library')}</p><div class="menu-actions">${current ? `<button data-action="download">${icon('download')}Download Markdown<small>Original file</small></button><button data-action="source">${icon('code')}View source<small>Markdown</small></button><button data-action="bookmark">${icon('bookmark')}${current.bookmarked ? 'Remove bookmark' : 'Bookmark document'}</button><button data-action="focus">${icon('scan')}${document.body.classList.contains('focus') ? 'Exit focus mode' : 'Focus mode'}<small>F</small></button><hr />` : ''}<button data-action="import">${icon('plus')}Add document</button><button data-action="export-library">${icon('download')}Back up library<small>JSON</small></button><button data-action="restore-library">${icon('upload')}Restore library<small>JSON backup</small></button><button data-action="about">${icon('info')}Offline & installation</button>${current ? `<hr /><button class="danger" data-action="remove">${icon('trash-2')}Remove from library</button>` : ''}</div>`);
+  showSheet('Your document', `<p class="sheet-description">${esc(current?.title || 'Your library')}</p><div class="menu-actions">${current ? `<button data-action="listen">${icon('book-open')}Read aloud<small>Device voices</small></button><button data-action="download">${icon('download')}Download Markdown<small>Original file</small></button><button data-action="source">${icon('code')}View source<small>Markdown</small></button><button data-action="bookmark">${icon('bookmark')}${current.bookmarked ? 'Remove bookmark' : 'Bookmark document'}</button><button data-action="focus">${icon('scan')}${document.body.classList.contains('focus') ? 'Exit focus mode' : 'Focus mode'}<small>F</small></button><hr />` : ''}<button data-action="import">${icon('plus')}Add document</button><button data-action="export-library">${icon('download')}Back up library<small>JSON</small></button><button data-action="restore-library">${icon('upload')}Restore library<small>JSON backup</small></button><button data-action="about">${icon('info')}Offline & installation</button>${current ? `<hr /><button class="danger" data-action="remove">${icon('trash-2')}Remove from library</button>` : ''}</div>`);
 }
 
 function showAbout() {
+  if (isNative) return showSheet('Folio, on your device', '<p class="sheet-description">Folio 1.2.0 · Android. Your reader, diagrams, code and math are bundled for offline use. Documents and listening positions stay in this app on this device. Keep a library backup before uninstalling or clearing app data.</p><p class="sheet-description">Install a newer APK over this one to update and keep your library. APK installs do not auto-update. Google Play distribution is planned separately.</p><div class="menu-actions"><button data-action="listen">Read aloud · device voices</button><button data-action="share-help">Open files from Android</button><button data-action="export-library">Back up library</button><button data-action="restore-library">Restore library</button></div><p class="field-note"><a href="https://github.com/timsamart/folio/releases/latest" target="_blank" rel="noopener noreferrer">Get the latest release</a> · <a href="https://timsamart.github.io/folio/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a></p>');
   showSheet('Yours, wherever you read', `<p class="sheet-description">Your documents and reading position are stored in this browser on this device. There is no account or cloud sync. Keep a backup before clearing browser data.</p><div class="appearance-preview"><span>OFFLINE READING</span><p style="font-size:16px">${offlineReady ? 'Your reader is ready offline, including diagrams, code, and mathematics.' : import.meta.env.DEV ? 'Offline installation is available in the production build. This is a development preview.' : 'Preparing offline reading. Keep this page open while the app and renderers finish downloading.'}</p></div><h3>Keep Folio close</h3><p class="sheet-description">On iPhone or iPad, open Folio in Safari, tap Share, then Add to Home Screen. On Android or desktop, use your browser’s Install app option.</p>${pendingInstall ? '<button class="primary-button" data-action="install">Install Folio</button>' : ''}<button class="secondary-button" data-action="export-library">Back up your library</button><p class="field-note">Browser storage can be cleared or evicted by your device. A backup keeps a separate copy of every document. External images require a connection and are loaded only on request.</p>`);
   if (updateAvailable) {
     const button = document.createElement('button'); button.className = 'primary-button'; button.dataset.action = 'update-app'; button.textContent = 'Reader update available'; sheetContent.prepend(button);
   }
-  sheetContent.insertAdjacentHTML('beforeend', '<button class="secondary-button" data-action="share-help">Open from another app</button><p class="field-note">Folio 1.1.0</p>');
+  sheetContent.insertAdjacentHTML('beforeend', '<button class="secondary-button" data-action="share-help">Open from another app</button><p class="field-note">Folio 1.2.0</p>');
 }
 
-function download(data, name, type = 'text/markdown;charset=utf-8') {
+async function download(data, name, type = 'text/markdown;charset=utf-8') {
+  if (isNative) {
+    try { const result = await device.exportFile({ text: data, name, type }); toast(result.saved ? 'Saved to your chosen location' : 'Export cancelled'); }
+    catch (error) { toast(error.message || 'The file could not be saved.'); }
+    return;
+  }
   const url = URL.createObjectURL(new Blob([data], { type }));
   const anchor = document.createElement('a'); anchor.href = url; anchor.download = name; document.body.append(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -307,6 +322,7 @@ async function importFiles(files) {
 }
 
 function emptyLibrary() {
+  void listening.load(null);
   current = null; headings = []; prefs.current = ''; rememberPreferences();
   content.innerHTML = '<h1>A little room<br />for your next read.</h1><p>Bring something worth keeping. Your Markdown documents will find a home here.</p><button class="primary-button" data-action="import">Add your first document</button>';
   $('#current-filename').textContent = 'Your library'; $('#collection-label').textContent = 'A FRESH PAGE'; $('#reading-time').textContent = '';
@@ -319,6 +335,7 @@ function emptyLibrary() {
 const actions = {
   'share-help': showShareHelp,
   'retry-share': () => location.reload(),
+  listen: () => listening.settings(),
   library: showLibrary,
   import: showImport,
   'choose-files': () => { $('#file-input').value = ''; $('#file-input').click(); },
@@ -336,7 +353,7 @@ const actions = {
     toast(saved ? current.bookmarked ? 'Kept close. Bookmark saved.' : 'Bookmark removed' : 'Bookmark changed for this session; storage is unavailable.');
   },
   focus: () => { closeSheet(); document.body.classList.toggle('focus'); $$('[data-action="focus"]').forEach(el => el.setAttribute('aria-pressed', String(document.body.classList.contains('focus')))); updateProgress(false); },
-  download: () => { if (current) { download(current.content, current.name); toast('Original Markdown downloaded'); } },
+  download: () => { if (current) { download(current.content, current.name); if (!isNative) toast('Original Markdown downloaded'); } },
   source: () => { if (current) showSheet('Behind the page', `<p class="sheet-description">${esc(current.name)}</p><button class="secondary-button" id="copy-source">Copy Markdown</button><pre class="source-view" tabindex="0">${esc(current.content)}</pre>`); },
   remove: () => { if (current) showSheet('Remove this document?', `<p class="sheet-description">“${esc(current.title)}” will be removed from this browser’s library. Your original file is unaffected.</p><button class="primary-button" data-action="confirm-remove">Remove from library</button><button class="text-button" data-action="close">Keep reading</button>`); },
   'confirm-remove': async () => {
@@ -344,13 +361,14 @@ const actions = {
     const id = current.id;
     clearTimeout(scrollTimer);
     try { await deleteDocument(id); } catch { toast('The document could not be removed. Try again.'); return; }
+    try { localStorage.removeItem(`folio-listening-place:${id}`); } catch {}
     documents = documents.filter(doc => doc.id !== id); current = null;
     closeSheet();
     if (documents.length) await openDocument(documents[0].id); else emptyLibrary();
     toast('Document removed');
   },
   close: closeSheet,
-  'export-library': () => { download(JSON.stringify({ format: 'folio-library', version: 1, documents }, null, 2), 'folio-library.json', 'application/json'); toast('Library backup downloaded'); },
+  'export-library': () => { download(JSON.stringify({ format: 'folio-library', version: 1, documents }, null, 2), 'folio-library.json', 'application/json'); if (!isNative) toast('Library backup downloaded'); },
   'restore-library': () => {
     showSheet('Restore your library', '<p class="sheet-description">Choose a Folio JSON backup. Restored documents are added to your library alongside your existing files.</p><label class="field-label" for="backup-input">Library backup</label><input class="field-input" type="file" id="backup-input" accept=".json,application/json" /><p id="restore-error" class="error-message" role="alert"></p>');
   },
@@ -474,6 +492,7 @@ document.addEventListener('dragover', event => { if (event.dataTransfer?.types.i
 document.addEventListener('drop', event => { if (event.dataTransfer?.files.length) { event.preventDefault(); void importFiles([...event.dataTransfer.files]); } dragDepth = 0; document.body.classList.remove('dragging'); });
 
 async function setupOffline() {
+  if (isNative) { offlineReady = true; $('#offline-label').textContent = 'Offline reader · Android'; return; }
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
   try {
     const registration = await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL });
@@ -515,5 +534,6 @@ async function init() {
   if (storageAvailable && navigator.storage?.persisted) navigator.storage.persisted().catch(() => {});
   void setupOffline();
   if (shared) showShareResult(shared);
+  await receiveNativeFiles({ add: addDocument, open: openDocument, changed: updateLibrary, report: message => showSheet('About your incoming files', `<p class="sheet-description">${esc(message)}</p>`) });
 }
 init().catch(error => { console.error(error); content.innerHTML = '<h1>Let’s turn the page.</h1><p>The reader could not open. Reload this page to try again; your stored documents have not been removed.</p>'; });

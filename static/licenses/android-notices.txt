@@ -1,0 +1,8 @@
+Android runtime notices
+
+The Android APK also includes AndroidX libraries (Copyright The Android Open Source Project) and Apache Cordova Android (Copyright The Apache Software Foundation), licensed under Apache License 2.0. The complete license is bundled in apache-2.0.txt.
+
+Capacitor (Copyright Ionic Team) is MIT licensed; its complete license is in dependencies.txt alongside the exact npm dependency notices.
+
+Sources: https://android.googlesource.com/platform/frameworks/support/ and https://github.com/apache/cordova-android and https://github.com/ionic-team/capacitor
+The Gradle dependency manifest and versions are defined in the Android build files. Fonts retain their individual license files in this directory.

@@ -4,25 +4,29 @@ A little room to read. Folio is a mobile Markdown reader with Mermaid diagrams, 
 
 **[Open Folio](https://timsamart.github.io/folio/)** · **[Download a release](https://github.com/timsamart/folio/releases/latest)**
 
-## Install on your phone
+## Install on Android
 
-Open the app link in your browser. On **iPhone or iPad**, use Safari → Share → Add to Home Screen. On **Android**, use your browser's Install app or Add to Home screen command. Desktop browsers that support installed web apps also offer an install button.
+**[Download the Android APK](https://github.com/timsamart/folio/releases/latest)** and install it. Then use **Files → your .md file → Open with → Folio**. Sharing one or more Markdown files to Folio also works. Android may ask you to allow installation from the app used to open the APK.
 
-Keep Folio open until offline reading is ready. Your documents, fonts, code highlighting, math, and diagram renderers can then work without a connection. This is an installable web app, not an APK or App Store package.
+The APK bundles the reader, fonts, diagrams, code and math for immediate offline use. Accepted files: UTF-8 `.md`, `.markdown`, `.mdown`, and `.txt`, up to 2 MB each. The receiver accepts common Markdown MIME types and generic `application/octet-stream`, then checks the filename and contents. Files are copied into your library; original files remain untouched.
 
-### Open Markdown from other Android apps
+**Moving from the browser app:** export **Document options → Back up library** in the old app, then **Restore library** in the APK. These installations have separate storage. Verify the restore before uninstalling anything.
 
-1. Open Folio in **Chrome on Android** and choose **Install app** (an installed app is required; a home-screen shortcut does not register a share target).
-2. In Files or another file manager, select one or more Markdown files and tap **Share → Folio**.
-3. Folio saves the files in your library and opens the last document. Markdown shared as text works too.
+**Updating the APK:** install the newer APK over the existing app to keep your library. Direct APK installs do not auto-update. Google Play packaging is prepared; the app is not yet published there. See [Android release and store handoff](docs/ANDROID-RELEASE.md).
 
-Use Android's **Share** menu. The separate **Open with** picker and default file associations are not supported by this web app on Android. Safari on iOS does not support receiving shares into installed web apps; use Folio's file picker there.
+### Browser installation
 
-**Already installed before version 1.1?** Open Folio online and apply **Reader update available → Update & reload** if offered. Android's installed-app registration updates separately and can take longer. If Folio still does not appear under Share, **back up your library first**, uninstall Folio, and install it again from Chrome. Restore the backup if needed. Don't clear browser data without a backup.
+The [web reader](https://timsamart.github.io/folio/) remains available. On iPhone/iPad use Safari → Share → Add to Home Screen; on Android and desktop use the browser's Install app command. Keep it open until offline reading is ready. Apply reader updates from the offline/installation panel when offered.
 
-The service worker receives shared files locally, including offline. File contents are not uploaded to GitHub Pages or placed in a URL. It accepts up to 20 files per share, 2 MB per file, and 20 MB in total. Unsupported, empty, binary, and oversized files get an explanation; valid files from the same share are still imported. Incoming files wait locally until saved; abandoned handoffs expire after one day when another share arrives.
+An Android Chrome-installed web app can receive **Share → Folio**, but Android **Open with** requires the APK. If an older PWA is missing from Share, back up its library before reinstalling it from Chrome. On iOS use Folio's own file picker. Browser shares are handled locally by the service worker: up to 20 files, 2 MB each and 20 MB total, with recoverable incoming copies until saved.
 
-See [Chrome's share target documentation](https://developer.chrome.com/docs/capabilities/web-apis/web-share-target) and [installed app manifest updates](https://web.dev/articles/manifest-updates).
+## Listen to a passage
+
+Tap **Read aloud**, select an installed device voice, then **Choose a passage**. Play one paragraph from its adjacent button, or use the play button beside a heading in the outline to read that section and its subsections. Paragraph playback stops at the paragraph; section playback stops before the next equal or higher heading.
+
+Pause/resume, previous/next passage, speed, highlight, Locate, and saved listening positions are included. Resume starts at the interrupted sentence; reopening a document never auto-plays. Scrolling manually turns off automatic following. Voice settings apply when you return to playback.
+
+Only voices reported as local and installed are offered. Android has a shortcut to system voice settings for downloading language data. Quality depends on your installed engine and voice. **No Kokoro model, cloud synthesis, voice account, or billing is included.** Playback pauses when the app is backgrounded. Code, diagrams and math receive short markers; image descriptions and footnotes are skipped.
 
 ## Read your way
 
@@ -38,9 +42,9 @@ See [Chrome's share target documentation](https://developer.chrome.com/docs/capa
 
 ## Your documents stay on your device
 
-Folio has no account, analytics, or cloud synchronization. Documents live in this browser's IndexedDB storage. Markdown images load only when requested. Browser storage can be cleared or evicted, so keep an independent backup using **Document options → Back up library**.
+Folio has no account, analytics, or cloud synchronization. Documents live in the browser or native app's IndexedDB storage. Markdown images load only when requested. Browser storage can be cleared or evicted, so keep an independent backup using **Document options → Back up library**.
 
-Libraries are specific to the device and website origin. To move from a local preview or another installation, export a library backup there and restore it here. Normal outbound links and manually loaded images make their usual network requests.
+Libraries are specific to the device and installation. To move from a local preview or another installation, export a library backup there and restore it here. Normal outbound links and manually loaded images make their usual network requests.
 
 ## Run locally
 
@@ -91,3 +95,6 @@ npx --yes --package @playwright/cli playwright-cli -s=share run-code --filename=
 Design work used Frontend Design, UI/UX Pro Max, and Vercel Web Design Guidelines; browser validation used Playwright.
 
 Bundled fonts use the SIL Open Font License. See [third-party notices](THIRD_PARTY_NOTICES.md) and the license files under `static/licenses/`.
+
+
+Read [Folio’s privacy explanation](https://timsamart.github.io/folio/privacy.html). The internal `listening/` module separates semantic blocks, playback, voice providers and UI so future providers can be added without rewriting reading behavior.

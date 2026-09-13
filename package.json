@@ -1,12 +1,17 @@
 {
   "name": "folio-reader",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "description": "A quiet mobile Markdown reader with Mermaid, code, mathematics, and an offline library.",
-  "repository": { "type": "git", "url": "https://github.com/timsamart/folio.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/timsamart/folio.git"
+  },
   "homepage": "https://timsamart.github.io/folio/",
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/collect-notices.mjs",
@@ -14,9 +19,13 @@
     "build:portable": "vite build --base / --outDir portable-dist && node scripts/verify-build.mjs portable-dist /",
     "prebuild:portable": "node scripts/collect-notices.mjs",
     "preview": "vite preview",
-    "check": "node --check app.js && node --check renderer.js && node --check storage.js && node --check share-target.js && node --check vite.config.js"
+    "check": "node --check app.js && node --check renderer.js && node --check storage.js && node --check share-target.js && node --check vite.config.js && node --check native.js && node --check listening/index.js && node --check listening/model.js && node --check listening/controller.js && node --check listening/providers.js",
+    "build:android": "node scripts/collect-notices.mjs && vite build --base / --outDir native-dist && node scripts/verify-build.mjs native-dist / && cap sync android",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
     "dompurify": "3.4.15",
     "highlight.js": "11.12.0",
     "katex": "0.18.7",
@@ -26,5 +35,8 @@
     "marked-katex-extension": "5.1.12",
     "mermaid": "11.17.2"
   },
-  "devDependencies": { "vite": "6.4.3" }
+  "devDependencies": {
+    "@capacitor/cli": "8.4.3",
+    "vite": "6.4.3"
+  }
 }

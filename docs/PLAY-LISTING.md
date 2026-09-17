@@ -32,4 +32,6 @@ Folio opens UTF-8 .md, .markdown, .mdown, and .txt files up to 2 MB. Files are c
 
 **Support website:** https://github.com/timsamart/folio/issues
 
-Owner still supplies publisher/contact details, support email, target audience, ratings and data-safety answers, store countries, final screenshots and feature graphic. Do not advertise premium voices, background playback, sync, or an iOS package in this release.
+Store artwork and submission checklist: [Google Play submission pack](../store/google-play/README.md). The icon and feature graphic are prepared; native screenshots still need recapture in Play's accepted dimensions.
+
+Owner still supplies publisher/contact details, support email, target audience, ratings and data-safety answers, and store countries. Do not advertise premium voices, background playback, sync, or an iOS package in this release.

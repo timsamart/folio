@@ -1,0 +1,18 @@
+{
+  "version": "v1.1.0",
+  "name": "Folio 1.1.0 \u2014 Android file sharing",
+  "originalPublishedAt": "2026-09-13T15:41:23Z",
+  "assets": [
+    {
+      "name": "folio-v1.1.0-web.zip",
+      "size": 2292403,
+      "sha256": "d2e5f5ba37fc606db0345968aa28481720cb3302a8a95785c6326551de135f7a"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 88,
+      "sha256": "9dfeb603aea8018bce9ce376536b0e79ed31fc851191d838454fa9ce361cc3bc"
+    }
+  ],
+  "archiveContents": "Public distribution records; development source is maintained separately."
+}

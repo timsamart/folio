@@ -1,0 +1,18 @@
+{
+  "version": "v1.0.0",
+  "name": "Folio 1.0.0",
+  "originalPublishedAt": "2026-09-13T15:14:20Z",
+  "assets": [
+    {
+      "name": "folio-v1.0.0-web.zip",
+      "size": 2289756,
+      "sha256": "c2fd3dd368da518ac883dde9209e926c0391f5648e9dc949d310bdb2107174ca"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 87,
+      "sha256": "2e63110bc4d12c05cb47b489317ecf87a9dd9ade4e66d9fd3973003fc8afa605"
+    }
+  ],
+  "archiveContents": "Public distribution records; development source is maintained separately."
+}

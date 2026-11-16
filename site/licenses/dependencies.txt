@@ -380,7 +380,7 @@ https://chevrotain.io/documentation/
 
 
 ========================================================================
-@esbuild/win32-x64 0.25.12
+@esbuild/linux-x64 0.25.12
 License: MIT
 
 
@@ -736,13 +736,13 @@ SOFTWARE.
 
 
 ========================================================================
-@rollup/rollup-win32-x64-gnu 4.63.2
+@napi-rs/lzma-linux-x64-gnu 1.5.1
 License: MIT
-https://rollupjs.org/
+
 
 
 ========================================================================
-@rollup/rollup-win32-x64-msvc 4.63.2
+@rollup/rollup-linux-x64-gnu 4.63.2
 License: MIT
 https://rollupjs.org/
 

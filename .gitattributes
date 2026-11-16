@@ -1,0 +1,8 @@
+* text=auto
+*.png binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+
+# Preserve generated files byte for byte across Windows/Linux.
+site/** -text

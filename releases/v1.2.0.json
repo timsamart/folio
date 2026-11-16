@@ -1,0 +1,28 @@
+{
+  "version": "v1.2.0",
+  "name": "Folio 1.2.0 \u2014 Android and device read aloud",
+  "originalPublishedAt": "2026-09-13T18:28:57Z",
+  "assets": [
+    {
+      "name": "folio-v1.2.0-android.apk",
+      "size": 5483741,
+      "sha256": "db078ad024be1c200835b2027ea46621a6ac4d35668a26990b570dcd386e8684"
+    },
+    {
+      "name": "folio-v1.2.0-play.aab",
+      "size": 5353632,
+      "sha256": "c44229f3100bdbe743f211ececdf577c68e93a6bd72f85ba2b3ac620e060e4b4"
+    },
+    {
+      "name": "folio-v1.2.0-web.zip",
+      "size": 2324864,
+      "sha256": "ebbf9d600495112ac529bd44907eb95fbfb11c20735bf5049e09de89b9ec385a"
+    },
+    {
+      "name": "SHA256SUMS-v1.2.0.txt",
+      "size": 269,
+      "sha256": "c65fd2c44594096354fabacd212010e33f4902a79b4221fa4d8876b82aa467ce"
+    }
+  ],
+  "archiveContents": "Public distribution records; development source is maintained separately."
+}
